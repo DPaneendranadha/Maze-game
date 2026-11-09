@@ -16,6 +16,7 @@ power waves.
 - **Power waves** that destroy enemies
 - A scrolling camera that follows the player around a 32×32-tile world
 - Results screen with score, kills, lives and time left
+- **High-score table** per level, saved between runs
 
 ## Getting started
 
@@ -60,12 +61,14 @@ Maze-game/
 │   ├── maze.py          # random maze generation + BFS path finding (no pygame)
 │   ├── sprites.py       # tiles, animated sprites, enemies, power waves
 │   ├── assets.py        # image cache and sound/volume handling
+│   ├── highscores.py    # best scores per level, saved as JSON (no pygame)
 │   └── game.py          # game loop and the five screens
 ├── assets/
 │   ├── images/          # ui/, tiles/, items/, player/, enemies/, effects/
 │   └── sounds/
 └── tests/
-    └── test_maze.py     # checks every generated maze is solvable, etc.
+    ├── test_maze.py     # checks every generated maze is solvable, etc.
+    └── test_highscores.py
 ```
 
 ### How the maze is generated
@@ -78,6 +81,9 @@ Maze-game/
 
 Details are in [`maze_game/maze.py`](maze_game/maze.py).
 
+High scores are stored in `~/.local/share/maze-game/highscores.json` on Linux,
+`~/Library/Application Support/maze-game/` on macOS and `%APPDATA%\maze-game\` on Windows.
+
 ## Running the tests
 
 ```bash
@@ -88,7 +94,7 @@ pytest
 ## Roadmap
 
 - [ ] Original artwork and music (replacing the current fan-made assets)
-- [ ] High-score table saved between runs
+- [x] High-score table saved between runs
 - [ ] Smarter enemies that chase the player
 - [ ] "Show hint" using the built-in BFS path finder
 - [ ] Proper maze algorithms (recursive backtracker, Prim's) as alternative generators

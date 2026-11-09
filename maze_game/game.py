@@ -19,11 +19,13 @@ from . import config
 from .assets import (CLOCK_FRAMES, ENEMY_FRAMES, PLAYER_FRAMES, POWER_FRAMES,
                      WAVE_FRAMES, Sounds, load_image)
 from .config import TILE, Level
+from .highscores import HighScores
 from .maze import generate_maze
 from .sprites import (DIRECTION_STEPS, DOWN, LEFT, RIGHT, UP, AnimatedSprite, Enemy,
                       Probe, Tile, Wave, in_world)
 
 WHITE = (255, 255, 255)
+GOLD = (255, 200, 40)
 BLACK = (0, 0, 0)
 SCREEN_RECT = pygame.Rect(0, 0, config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
 
@@ -74,6 +76,8 @@ class Round:
         self.start_ms = pygame.time.get_ticks()
         self.end_ms: int | None = None   # set when the round finishes; freezes the clock
         self.won = False
+        self.high_score_rank: int | None = None   # set when the round finishes
+        self.previous_best: int | None = None
 
         layout = self.layout
         self.player = AnimatedSprite(0, 0, PLAYER_FRAMES)
@@ -136,6 +140,7 @@ class Game:
         self.sounds = Sounds(config.DEFAULT_MUSIC_VOLUME, config.DEFAULT_SOUND_VOLUME)
         self.sounds.start_music()
 
+        self.high_scores = HighScores()
         self.state = Screen.TITLE
         self.round: Round | None = None
         self.running = True
@@ -231,8 +236,14 @@ class Game:
         reached_exit = game.player.rect.colliderect(game.exit.rect)
         if reached_exit or game.lives <= 0 or game.remaining_ms <= 0:
             game.finish(won=reached_exit and game.lives > 0 and game.remaining_ms > 0)
+            self._record_score()
             self.sounds.play("win" if game.won else "lose")
             self.state = Screen.RESULTS
+
+    def _record_score(self) -> None:
+        game = self.round
+        game.previous_best = self.high_scores.best(game.level.number)
+        game.high_score_rank = self.high_scores.add(game.level.number, game.final_score())
 
     def _move_player(self, held) -> None:
         game = self.round
@@ -341,8 +352,12 @@ class Game:
             (self.big_font, f"{seconds_left:02d}", (450, 655)),
             (self.big_font, f"Kills: {game.kills}", (125, 420)),
         ]
-        for font, text, center in texts:
-            rendered = font.render(text, True, WHITE)
+        if game.high_score_rank == 1:
+            texts.append((self.title_font, "NEW HIGH SCORE!", (340, 790), GOLD))
+        elif game.previous_best is not None:
+            texts.append((self.title_font, f"Best: {game.previous_best}", (340, 790)))
+        for font, text, center, *color in texts:
+            rendered = font.render(text, True, color[0] if color else WHITE)
             self.screen.blit(rendered, rendered.get_rect(center=center))
 
         if self._clicked(events, NEXT_BUTTON):
