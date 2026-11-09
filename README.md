@@ -17,6 +17,7 @@ power waves.
 - A scrolling camera that follows the player around a 32×32-tile world
 - Results screen with score, kills, lives and time left
 - **High-score table** per level, saved between runs
+- **Hint key** that shows the shortest way to the exit (found with breadth-first search), at a cost of 5 seconds
 
 ## Getting started
 
@@ -37,6 +38,7 @@ python main.py                   # or: python -m maze_game
 |---|---|
 | Arrow keys | Move |
 | Space + arrow key | Fire a power wave in that direction |
+| H | Show the shortest path to the exit for 3 s (costs 5 s) |
 | 1 / 2 / 3 | Pick a level on the level-select screen |
 | Esc | Leave the level (in game) / quit (on title screen) |
 | Left Shift + Up/Down | Sound-effect volume |
@@ -96,6 +98,6 @@ pytest
 - [ ] Original artwork and music (replacing the current fan-made assets)
 - [x] High-score table saved between runs
 - [ ] Smarter enemies that chase the player
-- [ ] "Show hint" using the built-in BFS path finder
+- [x] "Show hint" using the built-in BFS path finder
 - [ ] Proper maze algorithms (recursive backtracker, Prim's) as alternative generators
 - [ ] Pause menu and on-screen volume controls

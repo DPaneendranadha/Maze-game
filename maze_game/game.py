@@ -20,7 +20,7 @@ from .assets import (CLOCK_FRAMES, ENEMY_FRAMES, PLAYER_FRAMES, POWER_FRAMES,
                      WAVE_FRAMES, Sounds, load_image)
 from .config import TILE, Level
 from .highscores import HighScores
-from .maze import generate_maze
+from .maze import find_path, generate_maze
 from .sprites import (DIRECTION_STEPS, DOWN, LEFT, RIGHT, UP, AnimatedSprite, Enemy,
                       Probe, Tile, Wave, in_world)
 
@@ -62,6 +62,12 @@ class Screen(Enum):
     GAME_OVER = auto()
 
 
+# A glowing yellow dot drawn on each cell of the hint path.
+HINT_MARKER = pygame.Surface((TILE, TILE), pygame.SRCALPHA)
+pygame.draw.circle(HINT_MARKER, (255, 220, 0, 90), (TILE // 2, TILE // 2), TILE // 2 - 4)
+pygame.draw.circle(HINT_MARKER, (255, 240, 60, 255), (TILE // 2, TILE // 2), TILE // 6)
+
+
 class Round:
     """The state of one attempt at a level: the maze, its sprites and the stats."""
 
@@ -78,6 +84,10 @@ class Round:
         self.won = False
         self.high_score_rank: int | None = None   # set when the round finishes
         self.previous_best: int | None = None
+        self.hint_path: list[tuple[int, int]] = []
+        self.hint_until_ms = 0
+        self.open_cells = {(x, y) for x in range(0, config.WORLD_SIZE, TILE)
+                           for y in range(0, config.WORLD_SIZE, TILE)} - self.layout.walls
 
         layout = self.layout
         self.player = AnimatedSprite(0, 0, PLAYER_FRAMES)
@@ -114,8 +124,19 @@ class Round:
         """Score plus bonuses for time and lives left."""
         return self.score + max(0, self.remaining_ms) // 100 + self.lives * 100
 
+    def show_hint(self) -> None:
+        """Work out the shortest way from the player to the exit and show it
+        for a few seconds, in exchange for some time off the clock."""
+        here = self.player.rect.topleft
+        self.hint_path = find_path(self.open_cells, here, self.layout.exit) or []
+        self.hint_until_ms = pygame.time.get_ticks() + config.HINT_DURATION_MS
+        self.time_limit_ms -= config.HINT_COST_MS
+
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(config.MAZE_BACKGROUND)
+        if pygame.time.get_ticks() < self.hint_until_ms:
+            for cell in self.hint_path[1:-1]:
+                surface.blit(HINT_MARKER, cell)
         for group in (self.walls, self.trap_walls, self.treasure, self.clocks,
                       self.power_pickups, self.enemies, self.waves):
             group.draw(surface)
@@ -216,6 +237,10 @@ class Game:
         if _key_pressed(events, pygame.K_ESCAPE):   # give up and go home
             self.state = Screen.TITLE
             return
+
+        if _key_pressed(events, pygame.K_h):
+            game.show_hint()
+            self.sounds.play("power")
 
         held = pygame.key.get_pressed()
         if held[pygame.K_SPACE]:

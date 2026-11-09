@@ -22,6 +22,8 @@ START_LIVES = 3
 TREASURE_POINTS = 10
 ENEMY_KILL_POINTS = 10
 CLOCK_BONUS_MS = 1000
+HINT_DURATION_MS = 3000   # how long the hint path stays on screen
+HINT_COST_MS = 5000       # time taken off the clock for each hint
 ENEMY_STEP = 20           # pixels an enemy moves per frame
 WAVE_SPEED = 40           # pixels a power wave moves per frame
 
