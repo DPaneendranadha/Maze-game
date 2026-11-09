@@ -81,6 +81,8 @@ class Round:
         self.time_limit_ms = level.time_limit_ms
         self.start_ms = pygame.time.get_ticks()
         self.end_ms: int | None = None   # set when the round finishes; freezes the clock
+        self.paused_at_ms: int | None = None
+        self.paused_total_ms = 0
         self.won = False
         self.high_score_rank: int | None = None   # set when the round finishes
         self.previous_best: int | None = None
@@ -112,8 +114,27 @@ class Round:
 
     @property
     def remaining_ms(self) -> int:
-        now = self.end_ms if self.end_ms is not None else pygame.time.get_ticks()
-        return self.time_limit_ms - (now - self.start_ms)
+        now = pygame.time.get_ticks()
+        if self.end_ms is not None:
+            now = self.end_ms
+        elif self.paused_at_ms is not None:
+            now = self.paused_at_ms
+        return self.time_limit_ms - (now - self.start_ms - self.paused_total_ms)
+
+    @property
+    def paused(self) -> bool:
+        return self.paused_at_ms is not None
+
+    def toggle_pause(self) -> None:
+        """Pause or resume. Time spent paused doesn't count against the clock."""
+        now = pygame.time.get_ticks()
+        if self.paused_at_ms is None:
+            self.paused_at_ms = now
+        else:
+            paused_for = now - self.paused_at_ms
+            self.paused_total_ms += paused_for
+            self.hint_until_ms += paused_for   # a hint shown before pausing keeps its time
+            self.paused_at_ms = None
 
     def finish(self, won: bool) -> None:
         """Stop the clock so the results screen shows the time at the finish."""
@@ -237,6 +258,12 @@ class Game:
         if _key_pressed(events, pygame.K_ESCAPE):   # give up and go home
             self.state = Screen.TITLE
             return
+        if _key_pressed(events, pygame.K_p):
+            game.toggle_pause()
+        if game.paused:
+            self._draw_play_area()
+            self._draw_pause_overlay()
+            return
 
         if _key_pressed(events, pygame.K_h):
             game.show_hint()
@@ -359,6 +386,16 @@ class Game:
         for text, x in ((f"Score: {game.score}", 10), (f"Power: {game.powers}", 200),
                         (f"Lives: {game.lives}", 500), (f"Time: {seconds_left}", 700)):
             self.screen.blit(self.hud_font.render(text, True, WHITE), (x, 10))
+
+    def _draw_pause_overlay(self) -> None:
+        shade = pygame.Surface(SCREEN_RECT.size, pygame.SRCALPHA)
+        shade.fill((0, 0, 0, 150))
+        self.screen.blit(shade, (0, 0))
+        lines = [(self.level_font, "PAUSED", 380),
+                 (self.hud_font, "P  resume      Esc  quit to title", 460)]
+        for font, text, y in lines:
+            rendered = font.render(text, True, WHITE)
+            self.screen.blit(rendered, rendered.get_rect(center=(SCREEN_RECT.centerx, y)))
 
     def _update_results(self, events) -> None:
         game = self.round

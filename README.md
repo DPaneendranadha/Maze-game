@@ -39,6 +39,7 @@ python main.py                   # or: python -m maze_game
 | Arrow keys | Move |
 | Space + arrow key | Fire a power wave in that direction |
 | H | Show the shortest path to the exit for 3 s (costs 5 s) |
+| P | Pause / resume (the timer stops while paused) |
 | 1 / 2 / 3 | Pick a level on the level-select screen |
 | Esc | Leave the level (in game) / quit (on title screen) |
 | Left Shift + Up/Down | Sound-effect volume |
@@ -100,4 +101,5 @@ pytest
 - [ ] Smarter enemies that chase the player
 - [x] "Show hint" using the built-in BFS path finder
 - [ ] Proper maze algorithms (recursive backtracker, Prim's) as alternative generators
-- [ ] Pause menu and on-screen volume controls
+- [x] Pause (P key) that stops the timer
+- [ ] On-screen volume controls
